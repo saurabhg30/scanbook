@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Book Lookup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <script src="//code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <h2>Book Lookup</h2>
+    <form id="search-form">
+        <input type="hidden" name="request" value="bookDetails">
+        <input placeholder="Enter ISBN" type="text" id="isbn" name="isbn" pattern="[0-9]+">
+        <button class="btn" type="submit">Search</button>
+    </form>
+    <p class="error">
+    </p>
+    <form id="book" style="display: none">
+        <input type="hidden" name="request" value="updateBookDetails">
+        <dl class="">
+            <dt>Title</dt>
+            <dd id="title">{{title}}</dd>
+            <dt>Author</dt>
+            <dd id="author">{{author}}</dd>
+            <dt>Number of pages</dt>
+            <dd id="pages">{{pages}}</dd>
+            <dt>Have you read the book?</dt>
+            <dd>
+              <select id="readStatus" name="readStatus">
+                <option value=""></option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+              </select>
+            </dd>
+        </dl>
+        <div class="clear"></div>
+        <p>Notes:</p>
+            <textarea id="notes" name="notes" rows="8" cols="40"></textarea>
+            <br>
+            <input class="btn" type="submit" value="Submit">
+            <p class="msg">
+            </p>
+   </form>
+    <script>
+    var book_data;
+    $(function() {
+      $( "#search-form" ).submit(function( event ) {
+        event.preventDefault();
+
+        $('.error').text("");
+        var isbn = $('#isbn').val();
+        if(isbn.length == 13 && isbn.charAt(0) == '9') {
+          console.log('submitting...');
+          $('#book').hide();
+          book_data = null;
+          $('#title').text('');
+          $('#author').text('');
+          $('#pages').text('');
+          $('#readStatus').val('');
+          $('#notes').text('');
+          $('.msg').text('');
+          var data = $("#search-form").serialize();
+          console.log(data);
+          $.get('api.php?' + data).done(function(res) {
+            console.log('done!');
+            book_data = res;
+            if (book_data.status == 200) {
+              console.log("book found");
+              $('#title').text(book_data.title);
+              $('#author').text(book_data.author);
+              $('#pages').text(book_data.pageCount);
+              $('#readStatus').val(book_data.readStatus);
+              $('#notes').text(book_data.notes);
+              $('#book').show();
+            } else {
+              console.log("book not found");
+              $('.error').text("Book not found");
+            }
+          });
+        } else {
+          $('.error').text("Invalid ISBN");
+        }
+      });
+      $( "#book" ).submit(function( event ) {
+        event.preventDefault();
+        console.log('book submitting...');
+        $.post('api.php',{request:'updateBookDetails', bookId:book_data.bookId, notes:$('#notes').val(), readStatus:$('#readStatus').val()}).done(function(res) {
+          console.log('done!');
+          $('.msg').text(res.message);
+        });
+      });
+    });
+    </script>
+</body>
+
+</html>
